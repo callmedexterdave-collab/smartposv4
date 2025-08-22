@@ -37,14 +37,15 @@ const AdminLogin: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      const user = await AuthService.loginAdmin(data.username, data.password);
+      const user = await AuthService.loginAdmin(data.username.trim(), data.password);
       if (user) {
         login(user);
-        if (user.businessName) {
-          setLocation('/admin-dashboard');
-        } else {
-          setLocation('/admin-main');
-        }
+        toast({
+          title: 'Welcome back!',
+          description: `Logged in as ${user.businessName || 'Admin'}`,
+        });
+        // Always go to dashboard for first-time or returning users
+        setLocation('/admin-dashboard');
       } else {
         toast({
           title: 'Login Failed',
@@ -53,9 +54,10 @@ const AdminLogin: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: 'Error',
-        description: 'An error occurred during login',
+        description: error instanceof Error ? error.message : 'An error occurred during login',
         variant: 'destructive',
       });
     } finally {

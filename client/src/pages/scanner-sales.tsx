@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { ProductService, SalesService, AuthService } from '@/lib/db';
+import { ProductService, SalesService, AuthService, db } from '@/lib/db';
 import type { CartItem } from '@shared/schema';
 
 const ScannerSales: React.FC = () => {
@@ -36,7 +36,17 @@ const ScannerSales: React.FC = () => {
 
   const handleBarcodeScan = async (barcode: string) => {
     try {
-      const product = await ProductService.getProductByBarcode(barcode);
+      // Validate barcode format
+      if (!barcode || barcode.trim().length === 0) {
+        toast({
+          title: 'Invalid Barcode',
+          description: 'Scanned barcode is empty or invalid',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const product = await ProductService.getProductByBarcode(barcode.trim());
       
       if (!product) {
         toast({
@@ -56,19 +66,33 @@ const ScannerSales: React.FC = () => {
         return;
       }
 
+      // Check if adding this quantity would exceed available stock
+      const existingCartItem = cart.find(item => item.productId === product.id);
+      const currentCartQuantity = existingCartItem ? existingCartItem.quantity : 0;
+      const totalQuantity = currentCartQuantity + quantity;
+
+      if (totalQuantity > product.quantity) {
+        toast({
+          title: 'Insufficient Stock',
+          description: `Cannot add ${quantity} more. Only ${product.quantity - currentCartQuantity} items available`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const cartItem: CartItem = {
         productId: product.id,
         name: product.name,
         price: product.price,
         quantity: quantity,
-        subtotal: product.price * quantity,
+        subtotal: Math.round(product.price * quantity * 100) / 100,
       };
 
       addToCart(cartItem);
       
       toast({
         title: 'Product Added',
-        description: `${product.name} added to cart`,
+        description: `${product.name} (${quantity}) added to cart`,
       });
 
       // Auto-reset quantity
@@ -77,7 +101,7 @@ const ScannerSales: React.FC = () => {
       console.error('Error processing barcode scan:', error);
       toast({
         title: 'Scan Error',
-        description: 'Failed to process barcode scan',
+        description: error instanceof Error ? error.message : 'Failed to process barcode scan',
         variant: 'destructive',
       });
     }
@@ -98,10 +122,18 @@ const ScannerSales: React.FC = () => {
     if (!adminPassword || !deleteItemId) return;
 
     try {
-      // Verify admin password (simplified - in real app you'd verify against actual admin)
-      const adminUser = await AuthService.loginAdmin('admin', adminPassword);
+      // Get all admin users and verify password against any of them
+      const adminUsers = await db.users.where('role').equals('admin').toArray();
+      let adminVerified = false;
       
-      if (adminUser) {
+      for (const admin of adminUsers) {
+        if (admin.username && await AuthService.loginAdmin(admin.username, adminPassword)) {
+          adminVerified = true;
+          break;
+        }
+      }
+      
+      if (adminVerified) {
         removeFromCart(deleteItemId);
         setDeleteItemId(null);
         setAdminPassword('');

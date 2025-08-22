@@ -80,7 +80,7 @@ const StaffManagement: React.FC = () => {
       console.error('Error adding staff:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add staff member',
+        description: error instanceof Error ? error.message : 'Failed to add staff member',
         variant: 'destructive',
       });
     } finally {

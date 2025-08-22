@@ -15,9 +15,16 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
 
   useEffect(() => {
     scannerRef.current = new BarcodeScanner();
+    
     return () => {
       if (scannerRef.current) {
         scannerRef.current.stopScanning();
+      }
+      // Clean up video streams on unmount
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
       }
     };
   }, []);
@@ -31,9 +38,10 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
         videoRef.current,
         (barcode) => {
           onResult(barcode);
-          // Brief pause after successful scan
+          // Brief pause after successful scan to prevent multiple scans of same item
+          scannerRef.current?.stopScanning();
           setTimeout(() => {
-            if (scannerRef.current?.isScanning()) {
+            if (scannerRef.current && !scannerRef.current.isScanning()) {
               startScanning();
             }
           }, 1000);

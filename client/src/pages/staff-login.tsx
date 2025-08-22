@@ -36,9 +36,13 @@ const StaffLogin: React.FC = () => {
   const onSubmit = async (data: StaffLoginFormData) => {
     setIsLoading(true);
     try {
-      const user = await AuthService.loginStaff(data.staffId, data.passkey);
+      const user = await AuthService.loginStaff(data.staffId.trim(), data.passkey);
       if (user) {
         login(user);
+        toast({
+          title: 'Welcome!',
+          description: `Logged in as ${user.ownerName}`,
+        });
         setLocation('/scanner');
       } else {
         toast({
@@ -48,9 +52,10 @@ const StaffLogin: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Staff login error:', error);
       toast({
         title: 'Error',
-        description: 'An error occurred during login',
+        description: error instanceof Error ? error.message : 'An error occurred during login',
         variant: 'destructive',
       });
     } finally {

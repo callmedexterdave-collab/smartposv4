@@ -48,9 +48,10 @@ const AdminSignup: React.FC = () => {
       });
       setLocation('/admin-dashboard');
     } catch (error) {
+      console.error('Signup error:', error);
       toast({
         title: 'Signup Failed',
-        description: 'An error occurred while creating your account',
+        description: error instanceof Error ? error.message : 'An error occurred while creating your account',
         variant: 'destructive',
       });
     } finally {

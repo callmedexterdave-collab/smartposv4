@@ -52,7 +52,20 @@ export class BarcodeScanner {
 
   stopScanning(): void {
     this.scanning = false;
-    this.codeReader.reset();
+    try {
+      this.codeReader.reset();
+      // Also stop all media streams to prevent memory leaks
+      const videos = document.querySelectorAll('video');
+      videos.forEach(video => {
+        if (video.srcObject) {
+          const stream = video.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+      });
+    } catch (error) {
+      console.error('Error stopping scanner:', error);
+    }
   }
 
   isScanning(): boolean {

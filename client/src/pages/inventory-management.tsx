@@ -94,7 +94,7 @@ const InventoryManagement: React.FC = () => {
       console.error('Error saving product:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save product',
+        description: error instanceof Error ? error.message : 'Failed to save product',
         variant: 'destructive',
       });
     } finally {

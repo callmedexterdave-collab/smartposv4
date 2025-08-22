@@ -47,13 +47,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.productId === item.productId);
       if (existingItem) {
+        const newQuantity = existingItem.quantity + item.quantity;
+        const newSubtotal = Math.round(newQuantity * existingItem.price * 100) / 100;
         return prevCart.map(cartItem =>
           cartItem.productId === item.productId
-            ? { ...cartItem, quantity: cartItem.quantity + item.quantity, subtotal: (cartItem.quantity + item.quantity) * cartItem.price }
+            ? { ...cartItem, quantity: newQuantity, subtotal: newSubtotal }
             : cartItem
         );
       }
-      return [...prevCart, item];
+      // Ensure subtotal is properly rounded when adding new item
+      const newItem = { ...item, subtotal: Math.round(item.subtotal * 100) / 100 };
+      return [...prevCart, newItem];
     });
   };
 
@@ -67,10 +71,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       return;
     }
 
+    // Round quantity to avoid floating point issues
+    const roundedQuantity = Math.max(1, Math.floor(quantity));
+
     setCart(prevCart =>
       prevCart.map(item =>
         item.productId === productId
-          ? { ...item, quantity, subtotal: quantity * item.price }
+          ? { ...item, quantity: roundedQuantity, subtotal: Math.round(roundedQuantity * item.price * 100) / 100 }
           : item
       )
     );
