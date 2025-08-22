@@ -194,7 +194,7 @@ const ProfileSettings: React.FC = () => {
                   data-testid="select-scan-timeout"
                 >
                   <option>2 seconds</option>
-                  <option defaultSelected>3 seconds</option>
+                  <option selected>3 seconds</option>
                   <option>5 seconds</option>
                 </select>
               </div>

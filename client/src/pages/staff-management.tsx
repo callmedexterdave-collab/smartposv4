@@ -181,7 +181,7 @@ const StaffManagement: React.FC = () => {
                         <h3 className="font-semibold text-gray-800">{member.name}</h3>
                         <p className="text-sm text-gray-500">Staff ID: {member.staffId}</p>
                         <p className="text-xs text-gray-400">
-                          Created: {formatDate(member.createdAt)}
+                          Created: {formatDate(member.createdAt || new Date())}
                         </p>
                       </div>
                     </div>

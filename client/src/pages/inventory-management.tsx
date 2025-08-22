@@ -109,7 +109,7 @@ const InventoryManagement: React.FC = () => {
       barcode: product.barcode,
       price: product.price,
       quantity: product.quantity,
-      category: product.category,
+      category: product.category || undefined,
     });
     setIsAddDialogOpen(true);
   };

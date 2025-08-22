@@ -3,6 +3,7 @@ import BottomNavigation from './BottomNavigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { WifiOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LayoutProps {
   children: React.ReactNode;
