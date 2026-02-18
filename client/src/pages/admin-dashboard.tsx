@@ -14,8 +14,8 @@ const AdminDashboard: React.FC = () => {
   const features = [
     {
       image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200",
-      title: "Offline na Sistema",
-      description: "Walang internet? Walang problema! Ang SmartPOS+ ay gumagana kahit offline."
+      title: "Offline POS",
+      description: "Hindi na kailangan ng internet para makapag record ng sales at i-manage ang inventory mo."
     },
     {
       image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200",
@@ -57,13 +57,13 @@ const AdminDashboard: React.FC = () => {
       className="min-h-screen bg-gray-50"
     >
       {/* Header */}
-      <div className="bg-primary-500 text-white p-6 rounded-b-3xl">
+      <div className="bg-[#3B6C7D] text-white p-6 rounded-b-3xl">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
           <h1 className="text-2xl font-bold mb-2">Welcome {user?.businessName || 'Kanegosyo'}!</h1>
-          <p className="text-primary-100">Manage your business with ease</p>
+          <p className="text-[#D89D9D]">Manage your business with ease</p>
         </motion.div>
       </div>
       
@@ -114,7 +114,7 @@ const AdminDashboard: React.FC = () => {
                   onClick={() => goToSlide(index)}
                   data-testid={`button-slide-${index}`}
                   className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentSlide ? 'bg-primary-500' : 'bg-gray-300'
+                    index === currentSlide ? 'bg-[#FF8882]' : 'bg-gray-300'
                   }`}
                 />
               ))}
@@ -133,15 +133,13 @@ const AdminDashboard: React.FC = () => {
         
         <Button
           onClick={() => setLocation('/admin-main')}
-          disabled={!hasViewedAll}
           data-testid="button-continue"
-          className={`w-full p-4 rounded-xl font-semibold shadow-lg touch-feedback ${
-            hasViewedAll 
-              ? 'bg-primary-500 text-white hover:bg-primary-600' 
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+          className="w-full p-4 rounded-xl font-semibold shadow-lg touch-feedback bg-[#FF8882] text-white hover:bg-[#D89D9D]"
+          style={{
+            boxShadow: '0 4px 12px rgba(255, 136, 130, 0.3)',
+          }}
         >
-          {hasViewedAll ? 'Next' : 'View all slides to continue'}
+          Continue to Dashboard
         </Button>
       </div>
     </motion.div>

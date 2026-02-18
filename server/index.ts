@@ -1,6 +1,8 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import os from 'os';
 
 const app = express();
 app.use(express.json());
@@ -37,6 +39,24 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Get local IP address for network access
+  const nets = os.networkInterfaces();
+  let localIP = 'localhost';
+  
+  // Find a non-internal IPv4 address
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] ?? []) {
+      // Check for IPv4 address
+      if (net.family === 'IPv4' && !net.internal) {
+        localIP = net.address;
+        break;
+      }
+    }
+  }
+  
+  console.log(`Server will be accessible at: http://${localIP}:5000`);
+  console.log(`Customer scanning page: http://${localIP}:5000/customer`);
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -63,9 +83,10 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: "0.0.0.0", // Listen on all network interfaces
   }, () => {
     log(`serving on port ${port}`);
+    log(`Open your browser to: http://localhost:${port}`);
+    log(`Network access: http://${localIP}:${port}`);
   });
 })();

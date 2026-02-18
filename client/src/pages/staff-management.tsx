@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, UserPlus, Trash2, Users } from 'lucide-react';
+import { ArrowLeft, UserPlus, Trash2, Users, Wifi, WifiOff } from 'lucide-react';
 import { useLocation } from 'wouter';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,10 @@ import { z } from 'zod';
 import { AuthService, StaffService } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Staff } from '@shared/schema';
+import { Badge } from '@/components/ui/badge';
+import io from 'socket.io-client';
 
 const staffSchema = z.object({
   name: z.string().min(1, 'Staff name is required'),
@@ -24,14 +27,28 @@ const staffSchema = z.object({
 
 type StaffFormData = z.infer<typeof staffSchema>;
 
+// Extended Staff type with online status
+interface StaffWithStatus extends Staff {
+  isOnline?: boolean;
+  lastActive?: Date;
+}
+
+// API endpoint for the real-time service will be discovered from the server
+let REALTIME_SERVICE_URL: string | undefined = undefined;
+
 const StaffManagement: React.FC = () => {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [staff, setStaff] = useState<StaffWithStatus[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('active');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [deletingStaff, setDeletingStaff] = useState<Staff | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<StaffWithStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const socketRef = useRef<any>(null);
+  const [serverInfoState, setServerInfoState] = useState<string>('unknown');
+  const [socketStatus, setSocketStatus] = useState<string>('disconnected');
+  const [socketLastError, setSocketLastError] = useState<string | null>(null);
 
   const form = useForm<StaffFormData>({
     resolver: zodResolver(staffSchema),
@@ -43,9 +60,37 @@ const StaffManagement: React.FC = () => {
   });
 
   const loadStaff = async () => {
+    setIsLoading(true);
     try {
-      const allStaff = await StaffService.getAllStaff();
-      setStaff(allStaff);
+      let staffData;
+      if (activeTab === 'active') {
+        staffData = await StaffService.getActiveStaff();
+      } else {
+        staffData = await StaffService.getInactiveStaff();
+      }
+      
+      if (!Array.isArray(staffData)) {
+        throw new Error('Invalid staff data format');
+      }
+      
+      // Initialize staff with default status
+      // Real-time updates will be applied via socket connection
+      const staffWithStatus = staffData.map(member => {
+        return {
+          ...member,
+          isOnline: false,
+          lastActive: member.createdAt ? member.createdAt : undefined
+        };
+      });
+      
+      setStaff(staffWithStatus);
+      
+      // After loading staff, request their current status from the real-time service
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit('getStaffStatus', staffData.map(s => s.id));
+      }
+      
+      return staffWithStatus;
     } catch (error) {
       console.error('Error loading staff:', error);
       toast({
@@ -53,29 +98,200 @@ const StaffManagement: React.FC = () => {
         description: 'Failed to load staff list',
         variant: 'destructive',
       });
+      setStaff([]);
+      return [];
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // Connect to real-time service
+  useEffect(() => {
+    // Sync all local staff to server to ensure consistency for logins
+    StaffService.getAllStaff().then(allStaff => {
+      if (allStaff.length > 0) {
+        fetch('/api/staff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(allStaff)
+        }).catch(e => console.warn('Background staff sync error:', e));
+      }
+    });
+
+    // Discover real-time server origin from API, then connect (works across LAN)
+    let heartbeatInterval: any;
+    let socketInstance: any = null;
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        const res = await fetch('/api/server-info');
+        if (!res.ok) throw new Error('No server info');
+        const data = await res.json();
+        REALTIME_SERVICE_URL = data.origin;
+        setServerInfoState(String(data.origin));
+
+        socketInstance = io(REALTIME_SERVICE_URL, {
+          auth: {
+            token: localStorage.getItem('userToken') || '',
+            businessId: user?.id || ''
+          },
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1000
+        });
+      } catch (error) {
+        console.warn('Could not determine server origin, falling back to window.location.origin', error);
+        try {
+          socketInstance = io(window.location.origin, {
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+          });
+        } catch (e) {
+          console.error('Socket init failed:', e);
+          socketInstance = null;
+        }
+      }
+
+      if (cancelled) return;
+
+      if (!socketInstance) {
+        // Proceed without real-time features
+        loadStaff();
+        return;
+      }
+
+      socketRef.current = socketInstance;
+
+      // Handle connection events
+      socketInstance.on('connect', () => {
+        console.log('Connected to real-time service');
+        setSocketStatus('connected');
+        setSocketLastError(null);
+        loadStaff();
+
+        if (user?.id) {
+          socketInstance.emit('adminOnline', { adminId: user.id });
+        }
+      });
+
+      socketInstance.on('connect_error', (error: any) => {
+        console.error('Connection error:', error);
+        setSocketStatus('error');
+        try { setSocketLastError(String(error?.message || JSON.stringify(error))); } catch { setSocketLastError(String(error)); }
+        toast({
+          title: 'Connection Error',
+          description: 'Failed to connect to real-time service',
+          variant: 'destructive',
+        });
+      });
+
+      socketInstance.on('staffStatusUpdate', (data: { staffId: string, isOnline: boolean, lastActive?: Date }) => {
+        setStaff(prevStaff => 
+          prevStaff.map(member => 
+            member.id === data.staffId 
+              ? { ...member, isOnline: data.isOnline, lastActive: data.lastActive || member.lastActive } 
+              : member
+          )
+        );
+
+        const staffMember = staff.find(s => s.id === data.staffId);
+        if (staffMember) {
+          toast({
+            title: `${staffMember.name} is ${data.isOnline ? 'Online' : 'Offline'}`,
+            description: data.isOnline 
+              ? 'Staff member has connected to the system' 
+              : `Last active: ${formatLastActive(data.lastActive)}`,
+            variant: data.isOnline ? 'default' : 'destructive',
+          });
+        }
+      });
+
+      socketInstance.on('staffStatusBulk', (statusUpdates: Array<{ staffId: string, isOnline: boolean, lastActive?: Date }>) => {
+        setStaff(prevStaff => {
+          const staffMap = new Map(prevStaff.map(s => [s.id, s]));
+
+          statusUpdates.forEach(update => {
+            const st = staffMap.get(update.staffId);
+            if (st) {
+              st.isOnline = update.isOnline;
+              st.lastActive = update.lastActive || st.lastActive;
+            }
+          });
+
+          return Array.from(staffMap.values());
+        });
+      });
+
+      // Heartbeat
+      heartbeatInterval = setInterval(() => {
+        if (socketRef.current && socketRef.current.connected && user?.id) {
+          socketRef.current.emit('heartbeat', { adminId: user.id });
+        }
+      }, 30000);
+    };
+
+    init();
+
+    return () => {
+      cancelled = true;
+      clearInterval(heartbeatInterval);
+      if (socketRef.current) {
+        if (user?.id) {
+          try { socketRef.current.emit('adminOffline', { adminId: user.id }); } catch (_) {}
+        }
+        try { socketRef.current.disconnect(); } catch (_) {}
+      }
+    };
+  }, [user?.id, toast]);
+  
+  // Load staff when tab changes
   useEffect(() => {
     loadStaff();
-  }, []);
+    
+    // Inform the real-time service about the current tab view
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('setStaffView', { view: activeTab });
+    }
+  }, [activeTab]);
 
   const onSubmit = async (data: StaffFormData) => {
     setIsLoading(true);
     try {
-      await AuthService.createStaff({
+      const newStaff = await AuthService.createStaff({
         ...data,
         createdBy: user?.id || '',
       });
       
-      toast({
-        title: 'Staff Added',
-        description: `${data.name} has been added to your team`,
-      });
-      
-      await loadStaff();
-      setIsAddDialogOpen(false);
-      form.reset();
+      if (newStaff) {
+        // Force reload the staff list to include the new staff member
+        const updatedStaff = await loadStaff();
+        
+        // If the new staff isn't in the updated list, force add it
+        if (updatedStaff && Array.isArray(updatedStaff) && !updatedStaff.some(s => s.id === newStaff.id)) {
+          setStaff(prev => [...prev, { ...newStaff, isOnline: false }]);
+        }
+        
+        toast({
+          title: 'Staff Added',
+          description: `${data.name} has been added to your team`,
+        });
+        
+        setIsAddDialogOpen(false);
+        form.reset();
+        // Sync newly created staff to server so other LAN devices can use credentials
+        try {
+          await fetch('/api/staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([newStaff])
+          });
+        } catch (e) {
+          console.warn('Failed to sync new staff to server:', e);
+        }
+      }
     } catch (error) {
       console.error('Error adding staff:', error);
       toast({
@@ -116,32 +332,122 @@ const StaffManagement: React.FC = () => {
       day: 'numeric',
     });
   };
+  
+  const formatLastActive = (date?: Date) => {
+    if (!date) return 'Unknown';
+    
+    try {
+      const now = new Date();
+      const lastActiveDate = new Date(date);
+      
+      // Check if date is valid
+      if (isNaN(lastActiveDate.getTime())) return 'Unknown';
+      
+      const diff = now.getTime() - lastActiveDate.getTime();
+      
+      // Less than a minute
+      if (diff < 60 * 1000) {
+        return 'Just now';
+      }
+      
+      // Less than an hour
+      if (diff < 60 * 60 * 1000) {
+        const minutes = Math.floor(diff / (60 * 1000));
+        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+      }
+      
+      // Less than a day
+      if (diff < 24 * 60 * 60 * 1000) {
+        const hours = Math.floor(diff / (60 * 60 * 1000));
+        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+      }
+      
+      // Otherwise show the date
+      return formatDate(date);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown';
+    }
+  };
 
   return (
     <Layout>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-gray-50"
+        className="min-h-screen bg-gray-50 dark:bg-gray-900"
       >
         {/* Header */}
-        <div className="bg-warning-500 text-white p-6 rounded-b-3xl">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-xl font-bold">Staff Management</h2>
-              <p className="text-warning-100 text-sm">Manage your team</p>
-            </div>
-            <button
-              onClick={() => setLocation('/admin-main')}
-              data-testid="button-back-home"
-              className="bg-warning-600 p-2 rounded-lg touch-feedback"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+        <div className="bg-white dark:bg-gray-800 shadow-lg border-b dark:border-gray-700">
+          <div className="flex items-center justify-between p-4">
+            <div className="w-10" />
+            <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Staff Management</h1>
+            <div className="w-10" />
           </div>
         </div>
         
-        <div className="p-4">
+        {/* Toggle Tabs for Active/Inactive */}
+        <div className="px-4 pt-4">
+          <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4 shadow-md">
+              <TabsTrigger 
+                value="active" 
+                className="text-sm font-medium"
+                style={{
+                  backgroundColor: activeTab === 'active' ? '#e6f7ff' : 'transparent',
+                  borderBottom: activeTab === 'active' ? '2px solid #1890ff' : 'none'
+                }}
+              >
+                Active
+              </TabsTrigger>
+              <TabsTrigger 
+                value="inactive" 
+                className="text-sm font-medium"
+                style={{
+                  backgroundColor: activeTab === 'inactive' ? '#fff1f0' : 'transparent',
+                  borderBottom: activeTab === 'inactive' ? '2px solid #ff4d4f' : 'none'
+                }}
+              >
+                Inactive
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        {/* Debug Panel: server info + socket state (visible to admin for troubleshooting) */}
+        <div className="px-4 pt-2">
+          <div className="max-w-4xl mx-auto bg-white/5 dark:bg-gray-800/30 rounded-lg p-3 text-sm text-gray-200">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <div className="text-xs text-gray-400">Real-time Server</div>
+                <div className="font-medium break-all">{serverInfoState}</div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-xs text-gray-400">Socket</div>
+                <div className={`px-2 py-1 rounded text-xs ${socketStatus === 'connected' ? 'bg-emerald-600 text-white' : socketStatus === 'error' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'}`}>
+                  {socketStatus}
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/server-info');
+                      const d = await res.json();
+                      setServerInfoState(String(d.origin));
+                      toast({ title: 'Server info refreshed' });
+                    } catch (e) {
+                      toast({ title: 'Failed to fetch server info', variant: 'destructive' });
+                    }
+                  }}
+                  className="px-3 py-1 rounded bg-white/10 hover:bg-white/20"
+                >
+                  Test
+                </button>
+              </div>
+            </div>
+            {socketLastError ? <div className="mt-2 text-xs text-red-300">Last error: {socketLastError}</div> : null}
+          </div>
+        </div>
+        
+        <div className="p-4 pb-20">
           {/* Staff List */}
           {staff.length === 0 ? (
             <motion.div
@@ -149,40 +455,79 @@ const StaffManagement: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="text-center py-16"
             >
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No staff members yet</h3>
-              <p className="text-gray-500 mb-6">Add your first staff member to get started</p>
+              <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No staff members yet</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">Add your first staff member to get started</p>
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
                 data-testid="button-add-first-staff"
-                className="bg-warning-500 hover:bg-warning-600"
+                className="bg-[#FF8882] hover:bg-[#D89D9D] text-white"
+                style={{
+                  boxShadow: '0 4px 12px rgba(255, 136, 130, 0.3)',
+                }}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Add Staff
               </Button>
             </motion.div>
           ) : (
-            <div className="space-y-3 mb-20">
+            <div className="space-y-3">
+              {activeTab === 'active' && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg mb-2">
+                  <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Active Staff Members</h3>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Staff members who are currently active</p>
+                </div>
+              )}
+              {activeTab === 'inactive' && (
+                <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded-lg mb-2">
+                  <h3 className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">Inactive Staff Members</h3>
+                  <p className="text-xs text-red-600 dark:text-red-400">Staff members who are currently inactive</p>
+                </div>
+              )}
               {staff.map((member, index) => (
                 <motion.div
                   key={member.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-white p-4 rounded-xl shadow-sm"
+                  className={`bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg ${activeTab === 'active' ? 'border-l-4 border-blue-500' : 'border-l-4 border-red-500'}`}
                   data-testid={`staff-${member.id}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mr-3">
+                      <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mr-3 relative">
                         <Users className="w-6 h-6 text-primary-500" />
+                        {/* Status indicator dot */}
+                        <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${member.isOnline ? 'bg-green-500' : 'bg-gray-400'} border-2 border-white`}></div>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-800">{member.name}</h3>
-                        <p className="text-sm text-gray-500">Staff ID: {member.staffId}</p>
-                        <p className="text-xs text-gray-400">
-                          Created: {formatDate(member.createdAt || new Date())}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-800 dark:text-gray-200">{member.name}</h3>
+                          <Badge className={member.isOnline ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}>
+                            {member.isOnline ? (
+                              <>
+                                <Wifi className="w-3 h-3 mr-1" />
+                                <span>Online</span>
+                              </>
+                            ) : (
+                              <>
+                                <WifiOff className="w-3 h-3 mr-1" />
+                                <span>Offline</span>
+                              </>
+                            )}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Staff ID: {member.staffId}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Created: {formatDate(member.createdAt || new Date())}
+                          </p>
+                          {!member.isOnline && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                              Last active: {formatLastActive(member.lastActive)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -206,7 +551,10 @@ const StaffManagement: React.FC = () => {
           transition={{ delay: 0.3 }}
           onClick={() => setIsAddDialogOpen(true)}
           data-testid="button-add-staff"
-          className="fixed bottom-24 right-6 bg-warning-500 text-white p-4 rounded-full shadow-lg hover:bg-warning-600 touch-feedback"
+          className="fixed bottom-28 right-6 bg-[#FF8882] text-white p-4 rounded-full shadow-xl hover:bg-[#D89D9D] touch-feedback z-50"
+          style={{
+            boxShadow: '0 10px 25px rgba(255, 136, 130, 0.3)',
+          }}
         >
           <UserPlus className="w-6 h-6" />
         </motion.button>
@@ -289,7 +637,10 @@ const StaffManagement: React.FC = () => {
                     type="submit"
                     disabled={isLoading}
                     data-testid="button-save-staff"
-                    className="flex-1 bg-warning-500 hover:bg-warning-600"
+                    className="flex-1 bg-[#FF8882] hover:bg-[#D89D9D] text-white"
+                    style={{
+                      boxShadow: '0 4px 12px rgba(255, 136, 130, 0.3)',
+                    }}
                   >
                     {isLoading ? 'Adding...' : 'Add Staff'}
                   </Button>

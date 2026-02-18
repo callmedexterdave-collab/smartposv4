@@ -1,0 +1,46 @@
+===============================================
+  INSTANT FIX FOR YOUR NETLIFY DEPLOYMENT
+===============================================
+
+THE PROBLEM:
+- You got "Page not found" because Netlify doesn't handle SPA routing
+
+THE FIX:
+- I added _redirects file (you don't need to worry about this)
+- Now redeploy the folder
+
+STEPS TO FIX (1 minute):
+
+1. Go back to Netlify (keep File Explorer open)
+2. In File Explorer, select ALL files and folders
+3. Drag them to Netlify "Deploys" area
+4. Wait 10 seconds
+5. Click "Open production deploy"
+
+DONE! Your app works! ✅
+
+===============================================
+WHAT FILES TO UPLOAD:
+===============================================
+
+FROM: BudgetManager/dist/public/
+
+Select all of these:
+- assets (folder)
+- images (folder)
+- index.html
+- manifest.json
+- sw.js
+- _redirects (the new file that fixes it)
+
+Drag the ENTIRE public folder or all files inside it.
+
+===============================================
+THAT'S IT!
+===============================================
+
+Your app URL will be:
+https://silly-crumble-fdaab7.netlify.app/
+
+After this fix, it works on ALL devices! 🎉
+

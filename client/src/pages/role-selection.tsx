@@ -7,43 +7,60 @@ const RoleSelection: React.FC = () => {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="p-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 pt-12"
-        >
-          <Users className="w-16 h-16 text-primary-500 mb-4 mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Select Your Role</h2>
-          <p className="text-gray-600">Choose how you want to access SmartPOS+</p>
+    <div className="min-h-screen bg-gradient-to-b from-[#081229] via-[#0b1320] to-[#071025] flex items-center justify-center p-6">
+      <div className="w-full max-w-4xl">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/6 mx-auto">
+            <Users className="w-6 h-6 text-pink-400" />
+            <h1 className="text-white text-lg font-semibold">SmartPOS+</h1>
+          </div>
+          <h2 className="mt-6 text-3xl font-extrabold text-white">Welcome — Choose a role</h2>
+          <p className="mt-2 text-sm text-white/70">Pick how you'll access SmartPOS+. Fast, secure, and focused.</p>
         </motion.div>
-        
-        <div className="space-y-4 px-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
             onClick={() => setLocation('/admin-login')}
             data-testid="button-select-admin"
-            className="w-full bg-primary-500 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 touch-feedback"
+            className="group relative overflow-hidden rounded-2xl p-6 bg-gradient-to-tr from-pink-600/30 to-purple-600/20 border border-white/6 shadow-2xl hover:scale-[1.02] transform transition-all"
           >
-            <UserCheck className="w-12 h-12 mb-3 mx-auto" />
-            <div className="text-xl font-semibold">ADMIN</div>
-            <div className="text-primary-100 text-sm mt-1">Full system access</div>
+            <div className="absolute -left-16 -top-16 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl opacity-60"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-white/6 border border-white/6 mb-4">
+                <UserCheck className="w-10 h-10 text-pink-300" />
+              </div>
+              <div className="text-white font-bold text-xl">ADMIN</div>
+              <div className="text-white/70 text-sm mt-1 text-center">Full access — manage products, reports, and settings</div>
+              <div className="mt-4 flex gap-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-white/6 text-white/90">Secure</span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-white/6 text-white/90">Analytics</span>
+              </div>
+            </div>
           </motion.button>
-          
+
           <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
+            initial={{ scale: 0.98, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
             onClick={() => setLocation('/staff-login')}
             data-testid="button-select-staff"
-            className="w-full bg-gray-100 text-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 border-2 border-gray-200 touch-feedback"
+            className="group relative overflow-hidden rounded-2xl p-6 bg-gradient-to-tr from-sky-600/20 to-indigo-700/10 border border-white/6 shadow-2xl hover:scale-[1.02] transform transition-all"
           >
-            <User className="w-12 h-12 mb-3 mx-auto text-gray-600" />
-            <div className="text-xl font-semibold">STAFF</div>
-            <div className="text-gray-500 text-sm mt-1">Sales access only</div>
+            <div className="absolute -right-12 -bottom-12 w-44 h-44 bg-sky-500/8 rounded-full blur-3xl"></div>
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-white/6 border border-white/6 mb-4">
+                <User className="w-10 h-10 text-sky-300" />
+              </div>
+              <div className="text-white font-bold text-xl">STAFF</div>
+              <div className="text-white/70 text-sm mt-1 text-center">Quick mode — process sales and manage checkout</div>
+              <div className="mt-4 flex gap-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-white/6 text-white/90">Quick</span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-white/6 text-white/90">Offline-ready</span>
+              </div>
+            </div>
           </motion.button>
         </div>
       </div>

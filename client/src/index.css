@@ -307,11 +307,80 @@
     z-index: 9999;
   }
 
-  /* Mobile optimizations */
-  @media (max-width: 768px) {
+  /* Responsive optimizations */
+  @media (max-width: 640px) {
     .touch-feedback {
       min-height: 44px;
       min-width: 44px;
+    }
+    
+    .text-responsive {
+      font-size: 0.875rem;
+    }
+    
+    .heading-responsive {
+      font-size: 1.25rem;
+    }
+    
+    .p-responsive {
+      padding: 0.75rem;
+    }
+    
+    .m-responsive {
+      margin: 0.75rem;
+    }
+    
+    .gap-responsive {
+      gap: 0.5rem;
+    }
+  }
+  
+  @media (min-width: 641px) and (max-width: 768px) {
+    .touch-feedback {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    .text-responsive {
+      font-size: 1rem;
+    }
+    
+    .heading-responsive {
+      font-size: 1.5rem;
+    }
+    
+    .p-responsive {
+      padding: 1rem;
+    }
+    
+    .m-responsive {
+      margin: 1rem;
+    }
+    
+    .gap-responsive {
+      gap: 0.75rem;
+    }
+  }
+  
+  @media (min-width: 769px) {
+    .text-responsive {
+      font-size: 1rem;
+    }
+    
+    .heading-responsive {
+      font-size: 1.75rem;
+    }
+    
+    .p-responsive {
+      padding: 1.25rem;
+    }
+    
+    .m-responsive {
+      margin: 1.25rem;
+    }
+    
+    .gap-responsive {
+      gap: 1rem;
     }
   }
 
@@ -404,22 +473,42 @@
   }
 
   .action-button {
-    @apply touch-feedback rounded-2xl shadow-lg p-6 text-center;
+    @apply touch-feedback rounded-2xl shadow-lg p-4 sm:p-6 text-center transition-all duration-300;
   }
 
   .stat-card {
-    @apply bg-white p-4 rounded-xl shadow-sm;
+    @apply bg-white p-3 sm:p-4 rounded-xl shadow-sm transition-all duration-300;
   }
 
   .product-card {
-    @apply bg-white p-4 rounded-xl shadow-sm flex items-center justify-between;
+    @apply bg-white p-3 sm:p-4 rounded-xl shadow-sm flex items-center justify-between transition-all duration-300;
+  }
+  
+  .container-responsive {
+    @apply w-full px-2 sm:px-4 md:px-6 mx-auto transition-all duration-300;
+  }
+  
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 transition-all duration-300;
   }
 
   .bottom-nav-item {
-    @apply flex flex-col items-center py-2 px-3 min-w-[74px] touch-feedback;
+    @apply flex flex-col items-center py-1 sm:py-2 px-2 sm:px-3 min-w-[60px] sm:min-w-[74px] touch-feedback transition-all duration-300;
   }
 
   .scanner-button {
-    @apply relative -top-4 w-16 h-16 rounded-full flex items-center justify-center shadow-lg touch-feedback;
+    @apply relative -top-4 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-lg touch-feedback transition-all duration-300;
+  }
+  
+  .card-responsive {
+    @apply bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 shadow-sm transition-all duration-300;
+  }
+  
+  .button-responsive {
+    @apply px-3 py-2 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-lg text-sm sm:text-base transition-all duration-300;
+  }
+  
+  .input-responsive {
+    @apply p-2 sm:p-3 text-sm sm:text-base rounded-lg sm:rounded-xl transition-all duration-300;
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import { Shield, ArrowLeft, Eye, EyeOff } from 'lucide-react';
@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AuthService } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -31,14 +33,40 @@ const AdminLogin: React.FC = () => {
     defaultValues: {
       username: '',
       password: '',
+      rememberMe: false,
     },
   });
+  
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('admin_username');
+    const savedPassword = localStorage.getItem('admin_password');
+    const rememberMeState = localStorage.getItem('admin_remember_me') === 'true';
+    
+    if (savedUsername && savedPassword && rememberMeState) {
+      form.setValue('username', savedUsername);
+      form.setValue('password', savedPassword);
+      form.setValue('rememberMe', rememberMeState);
+    }
+  }, [form]);
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
       const user = await AuthService.loginAdmin(data.username.trim(), data.password);
       if (user) {
+        // Save or clear credentials based on remember me checkbox
+        if (data.rememberMe) {
+          localStorage.setItem('admin_username', data.username.trim());
+          localStorage.setItem('admin_password', data.password);
+          localStorage.setItem('admin_remember_me', 'true');
+        } else {
+          // Clear saved credentials if remember me is unchecked
+          localStorage.removeItem('admin_username');
+          localStorage.removeItem('admin_password');
+          localStorage.removeItem('admin_remember_me');
+        }
+        
         login(user);
         toast({
           title: 'Welcome back!',
@@ -133,11 +161,45 @@ const AdminLogin: React.FC = () => {
               )}
             />
             
+            <div className="flex justify-between items-center mt-2">
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-remember-me"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-gray-600 font-medium cursor-pointer">
+                        Remember me
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setLocation('/forgot-password')}
+                data-testid="button-forgot-password"
+                className="text-[#FF8882] text-sm font-medium hover:text-[#D89D9D] transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
+            
             <Button
               type="submit"
               disabled={isLoading}
               data-testid="button-login"
-              className="w-full bg-primary-500 text-white p-4 rounded-xl font-semibold shadow-lg hover:bg-primary-600 touch-feedback"
+              className="w-full bg-[#FF8882] text-white p-4 rounded-xl font-semibold shadow-lg hover:bg-[#D89D9D] touch-feedback"
+              style={{
+                boxShadow: '0 4px 12px rgba(255, 136, 130, 0.3)',
+              }}
             >
               {isLoading ? 'Logging in...' : 'Login'}
             </Button>
@@ -149,7 +211,7 @@ const AdminLogin: React.FC = () => {
           <button
             onClick={() => setLocation('/admin-signup')}
             data-testid="button-go-signup"
-            className="text-primary-500 font-semibold ml-1"
+            className="text-[#FF8882] font-semibold ml-1 hover:text-[#D89D9D] transition-colors"
           >
             Sign Up
           </button>

@@ -1,17 +1,28 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { BarcodeScanner } from '@/lib/scanner';
-import { Camera, CameraOff } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, Upload } from 'lucide-react';
 
 interface ScannerProps {
   onResult: (barcode: string) => void;
   onError?: (error: Error) => void;
+  initialMirrorMode?: boolean;
+  onShutdownComplete?: (info: {
+    streamsStopped: number;
+    tracksStopped: number;
+    trackStates: Array<'ended' | 'live' | 'unknown'>;
+    memory?: { before?: number; after?: number; delta?: number };
+  }) => void;
 }
 
-const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
+const Scanner: React.FC<ScannerProps> = ({ onResult, onError, initialMirrorMode = false, onShutdownComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<BarcodeScanner | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mirrorMode, setMirrorMode] = useState(initialMirrorMode);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const memoryBeforeRef = useRef<number | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scannerRef.current = new BarcodeScanner();
@@ -29,11 +40,39 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
     };
   }, []);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!scannerRef.current) {
+        scannerRef.current = new BarcodeScanner();
+    }
+    
+    try {
+      setError(null);
+      const result = await scannerRef.current.decodeFromImageFile(file);
+      onResult(result);
+    } catch (err) {
+      console.error(err);
+      setError('Could not read barcode from image. Please try again.');
+      onError?.(err as Error);
+    } finally {
+        // Reset input so same file can be selected again if needed
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }
+  };
+
   const startScanning = async () => {
     if (!videoRef.current || !scannerRef.current) return;
 
     try {
       setError(null);
+      try {
+        const mem = (performance as any)?.memory?.usedJSHeapSize;
+        if (typeof mem === 'number') memoryBeforeRef.current = mem;
+      } catch {}
       await scannerRef.current.startScanning(
         videoRef.current,
         (barcode) => {
@@ -47,30 +86,89 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
           }, 1000);
         },
         (err) => {
-          setError('Scanner error occurred');
+          // Check if this is a reconnection attempt
+          if (err.message.includes('reconnection')) {
+            setIsReconnecting(true);
+            setError('Reconnecting camera...');
+          } else if (err.message.includes('reconnection failed')) {
+            setIsReconnecting(false);
+            setError('Camera disconnected. Please restart scanner.');
+            setIsActive(false);
+          } else {
+            setIsReconnecting(false);
+            setError(err.message || 'Scanner error occurred');
+          }
           onError?.(err);
-        }
+        },
+        mirrorMode
       );
       setIsActive(true);
     } catch (err) {
-      setError('Camera access denied or not available');
+      const errorMessage = err instanceof Error ? err.message : 'Camera access denied or not available';
+      setError(errorMessage);
       onError?.(err as Error);
     }
   };
 
   const stopScanning = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stopScanning();
+    try {
+      const states: Array<'ended' | 'live' | 'unknown'> = [];
+      let streamsStopped = 0;
+      let tracksStopped = 0;
+      scannerRef.current?.stopScanning();
+      const video = videoRef.current;
+      if (video && video.srcObject) {
+        const stream = video.srcObject as MediaStream;
+        const tracks = stream.getTracks();
+        tracks.forEach(t => {
+          try {
+            t.stop();
+            tracksStopped++;
+            const rs = (t as any).readyState;
+            states.push(rs === 'ended' ? 'ended' : rs === 'live' ? 'live' : 'unknown');
+          } catch {}
+        });
+        try {
+          stream.getTracks().forEach(() => {});
+          streamsStopped++;
+        } catch {}
+        video.srcObject = null;
+      }
       setIsActive(false);
+      setIsReconnecting(false);
+      setError(null);
+      let memAfter: number | undefined;
+      let memDelta: number | undefined;
+      try {
+        const mem = (performance as any)?.memory?.usedJSHeapSize;
+        if (typeof mem === 'number') memAfter = mem;
+        if (typeof memoryBeforeRef.current === 'number' && typeof memAfter === 'number') {
+          memDelta = memAfter - memoryBeforeRef.current;
+        }
+      } catch {}
+      onShutdownComplete?.({ streamsStopped, tracksStopped, trackStates: states, memory: { before: memoryBeforeRef.current, after: memAfter, delta: memDelta } });
+      console.info('Scanner stopped', { streamsStopped, tracksStopped, trackStates: states, memoryBefore: memoryBeforeRef.current, memoryAfter: memAfter, memoryDelta: memDelta });
+    } catch (e) {
+      setError('Failed to stop camera');
+      onError?.(e as Error);
+      console.error('Camera shutdown failed', e);
     }
   };
 
   return (
     <div className="relative">
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        className="hidden" 
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+      />
       <div className="relative bg-gray-900 rounded-xl overflow-hidden h-48">
         <video
           ref={videoRef}
-          className="w-full h-full object-cover"
+          className={`w-full h-full object-cover ${mirrorMode ? 'scale-x-[-1]' : ''}`}
           autoPlay
           playsInline
           muted
@@ -96,8 +194,17 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
 
         {/* Status indicator */}
         <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded flex items-center">
-          <Camera className="w-3 h-3 mr-1" />
-          {isActive ? 'Auto-scan enabled' : 'Camera inactive'}
+          {isReconnecting ? (
+            <>
+              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+              Reconnecting...
+            </>
+          ) : (
+            <>
+              <Camera className="w-3 h-3 mr-1" />
+              {isActive ? 'Auto-scan enabled' : 'Camera inactive'}
+            </>
+          )}
         </div>
 
         {/* Error message */}
@@ -109,7 +216,30 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
       </div>
 
       {/* Control buttons */}
-      <div className="flex justify-center mt-4 space-x-4">
+      <div className="flex justify-center mt-4 space-x-4 flex-wrap gap-y-2">
+        <button
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-blue-600 text-white px-3 py-2 rounded-lg flex items-center touch-feedback"
+        >
+            <Upload className="w-4 h-4 mr-2" />
+            Device Camera
+        </button>
+
+        <button
+          onClick={() => {
+            setMirrorMode(!mirrorMode);
+            if (isActive) {
+              stopScanning();
+              setTimeout(() => startScanning(), 300);
+            }
+          }}
+          className="bg-gray-700 text-white px-3 py-2 rounded-lg flex items-center touch-feedback"
+          title="Toggle mirror mode"
+        >
+          <RefreshCw className="w-4 h-4 mr-1" />
+          {mirrorMode ? 'Front' : 'Back'}
+        </button>
+        
         {!isActive ? (
           <button
             onClick={startScanning}
@@ -127,6 +257,20 @@ const Scanner: React.FC<ScannerProps> = ({ onResult, onError }) => {
           >
             <CameraOff className="w-4 h-4 mr-2" />
             Stop Scanner
+          </button>
+        )}
+        
+        {/* Retry button when there's an error */}
+        {error && (
+          <button
+            onClick={() => {
+              stopScanning();
+              setTimeout(() => startScanning(), 500);
+            }}
+            className="bg-yellow-500 text-white px-6 py-2 rounded-lg flex items-center touch-feedback"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
           </button>
         )}
       </div>

@@ -73,7 +73,7 @@ const AdminSignup: React.FC = () => {
         >
           <Store className="w-16 h-16 text-primary-500 mb-4 mx-auto" />
           <h2 className="text-2xl font-bold text-gray-800">Setup Your Business</h2>
-          <p className="text-gray-600 mt-2">Create your SmartPOS+ account</p>
+          <p className="text-gray-600 mt-2">Create a new SmartPOS+ account</p>
         </motion.div>
         
         <Form {...form}>
@@ -160,7 +160,10 @@ const AdminSignup: React.FC = () => {
               type="submit"
               disabled={isLoading}
               data-testid="button-create-account"
-              className="w-full bg-primary-500 text-white p-4 rounded-xl font-semibold shadow-lg hover:bg-primary-600 mt-6 touch-feedback"
+              className="w-full bg-[#FF8882] text-white p-4 rounded-xl font-semibold shadow-lg hover:bg-[#D89D9D] mt-6 touch-feedback"
+              style={{
+                boxShadow: '0 4px 12px rgba(255, 136, 130, 0.3)',
+              }}
             >
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
