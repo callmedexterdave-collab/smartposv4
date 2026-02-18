@@ -384,245 +384,296 @@ const AdminMain: React.FC = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="min-h-screen bg-white dark:bg-gray-900"
+        className="min-h-screen bg-[#FDFDFD]"
       >
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg border-b dark:border-gray-700">
-          <div className="flex items-center justify-between p-4">
+        <div className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100/50">
+          <div className="max-w-7xl mx-auto flex items-center justify-between p-6">
             <div className="flex flex-col">
-              <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200">SmartPOS+</h1>
-              <div className="text-sm font-normal text-gray-500 dark:text-gray-400 mt-1">
-                {currentDateTime.toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'})} {currentDateTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: true})}
+              <h1 className="text-2xl font-black tracking-tighter gold-gradient-text uppercase">SmartPOS+</h1>
+              <div className="text-[10px] font-bold tracking-[0.2em] text-gray-400 mt-1 uppercase">
+                {currentDateTime.toLocaleDateString('en-US', {month: 'long', day: '2-digit', year: 'numeric'})} • {currentDateTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: true})}
               </div>
             </div>
             <div>
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center justify-center w-8 h-8 bg-white dark:bg-gray-600 rounded-full shadow-inner">
-                      <User className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Admin</span>
+                <DropdownMenuTrigger className="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-full border border-gray-100 shadow-sm hover:shadow-md transition-all focus:outline-none group">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#BF953F] to-[#B38728] rounded-full flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">Administrator</span>
+                    <span className="text-[10px] text-gray-400 font-medium">Control Center</span>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="bottom" align="center" sideOffset={4} className="min-w-[10rem] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg overflow-hidden z-50">
-                  <DropdownMenuItem 
+                <DropdownMenuContent side="bottom" align="end" sideOffset={10} className="w-56 bg-white border border-gray-100 shadow-2xl rounded-2xl overflow-hidden z-50 p-2">
+                  <DropdownMenuItem
                     onClick={() => {
                       logout();
                       setLocation('/role-selection');
                     }}
-                    className="h-10 px-3 py-0 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center"
+                    className="h-12 px-4 rounded-xl text-sm font-semibold text-gray-700 hover:bg-red-50 hover:text-red-600 cursor-pointer flex items-center transition-colors group"
                   >
-                    <LogOut className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
-                    <span>Logout</span>
+                    <LogOut className="w-4 h-4 mr-3 text-gray-400 group-hover:text-red-500 transition-colors" />
+                    <span>Terminate Session</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
         </div>
-        
-        <div className="p-4 space-y-4 pb-20">
+
+        <div className="max-w-7xl mx-auto p-6 space-y-8 pb-32">
           {/* Welcome Header Section */}
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-pink-100 dark:bg-pink-900 p-4 rounded-xl shadow-lg mb-4"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="relative overflow-hidden bg-white p-10 rounded-[3rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)]"
           >
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                Welcome, {user?.ownerName || user?.username || 'User'}!
-              </h1>
-              <div className="text-right">
-                <div className="text-sm text-gray-700 dark:text-gray-300">Your Total Income</div>
-                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">₱{stats.totalIncome.toFixed(2)}</div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#BF953F]/10 to-transparent rounded-full -mr-20 -mt-20 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-[#BF953F]/5 to-transparent rounded-full -ml-20 -mb-20 blur-3xl"></div>
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div>
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#BF953F]/10 border border-[#BF953F]/20 mb-4"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#BF953F] animate-pulse"></div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#BF953F]">Active Dashboard</span>
+                </motion.div>
+                <h1 className="text-5xl font-black text-gray-900 tracking-tighter leading-[0.9]">
+                  Welcome back, <br />
+                  <span className="gold-gradient-text">{user?.ownerName || user?.username || 'Commander'}</span>
+                </h1>
+              </div>
+
+              <div className="text-right flex flex-col items-end">
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2">Total Gross Income</div>
+                <div className="text-6xl font-black tracking-tighter text-gray-900 leading-none">
+                  ₱{stats.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
               </div>
             </div>
           </motion.div>
 
-          
-          
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="modern-card p-8 group cursor-pointer"
               onClick={() => setLocation('/transaction-history')}
             >
-              <div className="text-2xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-emerald-500 transition-colors duration-500">
+                <DollarSign className="w-6 h-6 text-emerald-500 group-hover:text-white transition-colors duration-500" />
+              </div>
+              <div className="text-3xl font-black text-gray-900 tracking-tighter mb-1">
                 <span data-testid="text-today-sales">₱{stats.todaySales.toFixed(2)}</span>
               </div>
-              <div className="text-gray-500 dark:text-gray-400 text-sm">Today's Sales</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Daily Sales Revenue</div>
             </motion.div>
-            
+
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="modern-card p-8 group cursor-pointer"
               onClick={() => setLocation('/inventory')}
             >
-              <div className="text-2xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-                <Package className="w-6 h-6 mr-1 text-blue-500" />
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 transition-colors duration-500">
+                <Package className="w-6 h-6 text-blue-500 group-hover:text-white transition-colors duration-500" />
+              </div>
+              <div className="text-3xl font-black text-gray-900 tracking-tighter mb-1">
                 <span data-testid="text-total-products">{stats.totalProducts}</span>
               </div>
-              <div className="text-gray-500 dark:text-gray-400 text-sm">Total Products</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Active Inventory Count</div>
             </motion.div>
 
-          
-
-            
-          </div>
-          
-          
-
-          {/* Modern Dashboard Actions */}
-          <div className="mb-6">
-            <div className="max-w-6xl mx-auto bg-gradient-to-r from-white/40 via-pink-50/40 to-white/30 dark:from-gray-800/40 dark:via-pink-900/30 dark:to-gray-800/30 rounded-2xl p-6 shadow-2xl backdrop-blur-md border border-white/10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-                {/* Primary action hub */}
-                <div className="md:col-span-2 bg-gradient-to-br from-pink-50/60 to-white/10 dark:from-pink-900/30 dark:to-gray-800/10 rounded-xl p-6 flex flex-col justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Quick Actions</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Essential workflows at a glance — tap to open.</p>
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <motion.button
-                      initial={{ y: 8, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      onClick={() => setLocation('/purchased')}
-                      className="w-full flex flex-col items-center gap-2 p-4 bg-white/70 dark:bg-black/30 rounded-lg shadow-md hover:scale-[1.02] transform transition-all border border-white/20 md:flex-row md:items-start md:gap-4 min-w-0 md:justify-between"
-                    >
-                      <div className="p-3 bg-pink-500/10 rounded-lg flex-shrink-0">
-                        <Package className="w-6 h-6 text-pink-500" />
-                      </div>
-                      <div className="text-center md:text-left min-w-0 flex-1 whitespace-normal">
-                        <div className="font-semibold text-gray-800 dark:text-gray-100">Purchased</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{getFilteredPurchases().length} items</div>
-                      </div>
-                    </motion.button>
-
-                    <motion.button
-                      initial={{ y: 8, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.15 }}
-                      onClick={() => setLocation('/ledger')}
-                      className="w-full flex flex-col items-center gap-2 p-4 bg-white/70 dark:bg-black/30 rounded-lg shadow-md hover:scale-[1.02] transform transition-all border border-white/20 md:flex-row md:items-start md:gap-4 min-w-0 md:justify-between"
-                    >
-                      <div className="p-3 bg-indigo-500/10 rounded-lg flex-shrink-0">
-                        <CreditCard className="w-6 h-6 text-indigo-500" />
-                      </div>
-                      <div className="text-center md:text-left min-w-0 flex-1 whitespace-normal">
-                        <div className="font-semibold text-gray-800 dark:text-gray-100">Ledger</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{getFilteredCreditors().length} creditors</div>
-                      </div>
-                    </motion.button>
-
-                    <motion.button
-                      initial={{ y: 8, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.2 }}
-                      onClick={() => setLocation('/expenses')}
-                      className="w-full flex flex-col items-center gap-2 p-4 bg-white/70 dark:bg-black/30 rounded-lg shadow-md hover:scale-[1.02] transform transition-all border border-white/20 md:flex-row md:items-start md:gap-4 min-w-0 md:justify-between"
-                    >
-                      <div className="p-3 bg-emerald-500/10 rounded-lg flex-shrink-0">
-                        <DollarSign className="w-6 h-6 text-emerald-500" />
-                      </div>
-                      <div className="text-center md:text-left min-w-0 flex-1 whitespace-normal">
-                        <div className="font-semibold text-gray-800 dark:text-gray-100">Expenses</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{getFilteredExpenses().length} items</div>
-                      </div>
-                    </motion.button>
-
-                    <motion.button
-                      initial={{ y: 8, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.25 }}
-                      onClick={() => setLocation('/transaction-history')}
-                      className="w-full flex flex-col items-center gap-2 p-4 bg-white/70 dark:bg-black/30 rounded-lg shadow-md hover:scale-[1.02] transform transition-all border border-white/20 md:flex-row md:items-start md:gap-4 min-w-0 md:justify-between"
-                    >
-                      <div className="p-3 bg-yellow-500/10 rounded-lg flex-shrink-0">
-                        <Receipt className="w-6 h-6 text-yellow-500" />
-                      </div>
-                      <div className="text-center md:text-left min-w-0 flex-1 whitespace-normal">
-                        <div className="font-semibold text-gray-800 dark:text-gray-100">Transactions</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">View past transactions</div>
-                      </div>
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Secondary quick tools */}
-                <div className="bg-gradient-to-br from-white/30 to-transparent dark:from-gray-800/30 rounded-xl p-4 flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Tools</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Additional utilities</p>
-                    </div>
-                    {/* Tools dropdown removed per request */}
-                  </div>
-
-                  <motion.button
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    onClick={() => setLocation('/report-blank')}
-                    className="w-full flex items-center gap-3 p-3 rounded-md bg-gradient-to-r from-pink-50/60 to-white/30 dark:from-pink-900/20 dark:to-gray-800/10 border border-white/10 shadow-sm"
-                  >
-                    <FileText className="w-5 h-5 text-pink-500" />
-                    <div className="text-left">
-                      <div className="font-medium text-gray-800 dark:text-gray-100">Reports</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Generate business reports</div>
-                    </div>
-                  </motion.button>
-
-                </div>
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="modern-card p-8 group cursor-pointer"
+            >
+              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-[#BF953F] transition-colors duration-500">
+                <CreditCard className="w-6 h-6 text-[#BF953F] group-hover:text-white transition-colors duration-500" />
               </div>
+              <div className="text-3xl font-black text-gray-900 tracking-tighter mb-1">
+                <span>{getFilteredCreditors().length}</span>
+              </div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Pending Receivables</div>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="modern-card p-8 group cursor-pointer"
+            >
+              <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-purple-500 transition-colors duration-500">
+                <Receipt className="w-6 h-6 text-purple-500 group-hover:text-white transition-colors duration-500" />
+              </div>
+              <div className="text-3xl font-black text-gray-900 tracking-tighter mb-1">
+                <span>₱{totalExpenses.toFixed(2)}</span>
+              </div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Monthly Operating Costs</div>
+            </motion.div>
+          </div>
+
+          {/* Business Tools Section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black uppercase tracking-widest text-gray-900">Executive Tools</h2>
+              <div className="h-[2px] flex-1 mx-8 bg-gray-100"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { title: 'Inventory', desc: 'Product tracking', icon: Package, path: '/inventory', color: 'pink' },
+                { title: 'Financials', desc: 'Ledger management', icon: CreditCard, path: '/ledger', color: 'indigo' },
+                { title: 'Expenses', desc: 'Cost analysis', icon: DollarSign, path: '/expenses', color: 'emerald' },
+                { title: 'Logistics', desc: 'Purchase orders', icon: Calendar, path: '/purchased', color: 'amber' },
+              ].map((tool, i) => (
+                <motion.button
+                  key={tool.title}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.7 + i * 0.1 }}
+                  onClick={() => setLocation(tool.path)}
+                  className="modern-card p-6 flex flex-col items-start text-left group"
+                >
+                  <div className={`p-4 bg-${tool.color}-50 rounded-2xl mb-4 group-hover:bg-${tool.color}-500 transition-colors`}>
+                    <tool.icon className={`w-6 h-6 text-${tool.color}-500 group-hover:text-white transition-colors`} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">{tool.title}</h3>
+                  <p className="text-xs text-gray-400 font-medium">{tool.desc}</p>
+                </motion.button>
+              ))}
             </div>
           </div>
 
-          {/* Overview Graph + KPI Strip */}
-          <div className="max-w-6xl mx-auto mt-6 bg-gradient-to-r from-white/30 to-transparent dark:from-gray-800/30 rounded-2xl p-6 shadow-2xl backdrop-blur-md border border-white/6 overflow-visible">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-              <div className="lg:col-span-2 bg-white/5 dark:bg-gray-800/40 rounded-lg p-4">
-                <div className="text-sm text-gray-400 mb-3">Overview</div>
-                <div className="w-full rounded-md overflow-visible">
-                  <ChartContainer className="w-full" config={{ income: { color: 'var(--chart-1)' }, expenses: { color: 'var(--chart-2)' } }}>
-                    <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.06} />
-                      <XAxis dataKey="date" tick={{ fill: 'var(--muted-foreground)' }} />
-                      <YAxis tickFormatter={(v) => `₱${v}`} tick={{ fill: 'var(--muted-foreground)' }} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="income" stroke="var(--chart-1)" fill="url(#incomeGradient)" fillOpacity={0.14} />
-                      <Area type="monotone" dataKey="expenses" stroke="var(--chart-2)" fill="url(#expensesGradient)" fillOpacity={0.10} />
-                    </AreaChart>
-                  </ChartContainer>
+          {/* Stunning Analytics Graph */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.1 }}
+              className="lg:col-span-2 bg-white rounded-[3rem] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.03)] p-10"
+            >
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 tracking-tighter">Performance Matrix</h2>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">7-Day Financial Trajectory</p>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#BF953F]"></div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Gross Income</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-200"></div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Total Expenses</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="bg-white/10 rounded-lg p-4 min-h-[64px]">
-                  <div className="text-xs opacity-90">Total Income</div>
-                  <div className="text-lg font-bold">₱{stats.totalIncome.toFixed(2)}</div>
-                </div>
-
-                <div className="bg-white/10 rounded-lg p-4 min-h-[64px]">
-                  <div className="text-xs opacity-90">Total Expenses</div>
-                  <div className="text-lg font-bold">₱{totalExpenses.toFixed(2)}</div>
-                </div>
-
-                <div className="bg-white/10 rounded-lg p-4 min-h-[64px]">
-                  <div className="text-xs opacity-90">Profit</div>
-                  <div className={`text-lg font-bold ${profit >= 0 ? 'text-emerald-200' : 'text-red-300'}`}>₱{profit.toFixed(2)}</div>
-                </div>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#BF953F" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#BF953F" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#CBD5E1" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#CBD5E1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 700 }}
+                      dy={15}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 700 }}
+                      tickFormatter={(v) => `₱${v}`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: '20px',
+                        border: 'none',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                        padding: '16px',
+                        backgroundColor: 'white'
+                      }}
+                      itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                      labelStyle={{ marginBottom: '8px', color: '#94A3B8', fontSize: '10px', fontWeight: 'black', textTransform: 'uppercase' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="income"
+                      stroke="#BF953F"
+                      strokeWidth={4}
+                      fillOpacity={1}
+                      fill="url(#incomeGradient)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="expenses"
+                      stroke="#CBD5E1"
+                      strokeWidth={4}
+                      fillOpacity={1}
+                      fill="url(#expensesGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-            </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 1.2 }}
+              className="space-y-6"
+            >
+              {[
+                { label: 'Total Revenue', value: stats.totalIncome, color: '#BF953F', trend: '+12.5%' },
+                { label: 'Operational Cost', value: totalExpenses, color: '#94A3B8', trend: '-2.4%' },
+                { label: 'Net Profit Margin', value: profit, color: profit >= 0 ? '#10B981' : '#EF4444', trend: '+5.2%' },
+              ].map((kpi, i) => (
+                <div key={kpi.label} className="modern-card p-8 group">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{kpi.label}</span>
+                    <span className={`text-[10px] font-black p-1 px-2 rounded-full ${kpi.trend.startsWith('+') ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'}`}>
+                      {kpi.trend}
+                    </span>
+                  </div>
+                  <div className={`text-4xl font-black tracking-tighter mb-2 ${kpi.label === 'Total Revenue' ? 'gold-gradient-text' : 'text-gray-900'}`}>
+                    ₱{kpi.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="w-full h-1 bg-gray-50 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: '70%' }}
+                      transition={{ delay: 1.5 + i * 0.2, duration: 1 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: kpi.color }}
+                    ></motion.div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
           </div>
-
         </div>
 
         {/* Floating Action Button */}

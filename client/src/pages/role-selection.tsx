@@ -7,11 +7,11 @@ const RoleSelection: React.FC = () => {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background elements */}
       <div className="absolute top-0 left-0 w-full h-full">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-700/20 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary-700/20 rounded-full blur-[120px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#BF953F]/5 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#BF953F]/5 rounded-full blur-[120px]"></div>
       </div>
 
       <div className="w-full max-w-4xl relative z-10">
@@ -25,23 +25,23 @@ const RoleSelection: React.FC = () => {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-100 shadow-sm mb-8"
           >
-            <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></div>
-            <span className="text-white/60 text-xs font-medium tracking-widest uppercase">Select Access Mode</span>
+            <div className="w-2 h-2 rounded-full bg-[#BF953F] animate-pulse"></div>
+            <span className="text-gray-400 text-[10px] font-black tracking-[0.2em] uppercase">Select Access Mode</span>
           </motion.div>
 
-          <h1 className="text-5xl md:text-6xl font-black mb-4 tracking-tighter">
-            <span className="bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent">
+          <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter leading-none">
+            <span className="text-gray-900">
               Welcome to
             </span>
             <br />
-            <span className="bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">
+            <span className="gold-gradient-text uppercase">
               SmartPOS+
             </span>
           </h1>
-          <p className="text-white/40 text-lg font-light max-w-md mx-auto">
-            Experience the next generation of point of sale management. Choose your role to begin.
+          <p className="text-gray-400 text-lg font-medium max-w-md mx-auto">
+            Experience the next generation of enterprise management.
           </p>
         </motion.div>
 
@@ -52,29 +52,27 @@ const RoleSelection: React.FC = () => {
             transition={{ delay: 0.4 }}
             onClick={() => setLocation('/admin-login')}
             data-testid="button-select-admin"
-            className="group relative flex flex-col items-start p-8 rounded-3xl bg-[#0f0f0f] border border-white/5 hover:border-primary-500/50 transition-all duration-500 overflow-hidden"
+            className="group relative flex flex-col items-start p-10 rounded-[2.5rem] bg-white border border-gray-100 hover:border-[#BF953F]/30 shadow-[0_10px_40px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_50px_rgba(191,149,63,0.08)] transition-all duration-500 overflow-hidden"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ArrowRight className="w-6 h-6 text-primary-500" />
+            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowRight className="w-6 h-6 text-[#BF953F]" />
             </div>
 
-            <div className="w-14 h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center mb-6 group-hover:bg-primary-500 transition-colors duration-500">
-              <ShieldCheck className="w-7 h-7 text-primary-500 group-hover:text-black" />
+            <div className="w-16 h-16 rounded-3xl bg-amber-50 flex items-center justify-center mb-8 group-hover:bg-[#BF953F] transition-colors duration-500">
+              <ShieldCheck className="w-8 h-8 text-[#BF953F] group-hover:text-white" />
             </div>
 
-            <h3 className="text-2xl font-bold mb-2">
-              <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent group-hover:from-primary-400 group-hover:to-primary-600 transition-all">
-                Administrator
-              </span>
+            <h3 className="text-2xl font-black mb-2 text-gray-900 group-hover:text-[#BF953F] transition-colors">
+              Administrator
             </h3>
-            <p className="text-white/40 text-sm leading-relaxed text-left group-hover:text-white/60 transition-colors">
-              Full system control, inventory management, and detailed analytics reporting.
+            <p className="text-gray-400 text-sm font-medium leading-relaxed text-left group-hover:text-gray-500 transition-colors">
+              Full system control, strategic oversight, and advanced analytics.
             </p>
 
-            <div className="mt-8 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary-500/50">
-              <span>Secure Entry</span>
-              <div className="w-1 h-1 rounded-full bg-primary-500/30"></div>
-              <span>Admin Dashboard</span>
+            <div className="mt-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#BF953F]/60">
+              <span>Secure Access</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-[#BF953F]/30"></div>
+              <span>Command Center</span>
             </div>
           </motion.button>
 
@@ -84,28 +82,26 @@ const RoleSelection: React.FC = () => {
             transition={{ delay: 0.5 }}
             onClick={() => setLocation('/staff-login')}
             data-testid="button-select-staff"
-            className="group relative flex flex-col items-start p-8 rounded-3xl bg-[#0f0f0f] border border-white/5 hover:border-primary-500/50 transition-all duration-500 overflow-hidden"
+            className="group relative flex flex-col items-start p-10 rounded-[2.5rem] bg-white border border-gray-100 hover:border-[#BF953F]/30 shadow-[0_10px_40px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_50px_rgba(191,149,63,0.08)] transition-all duration-500 overflow-hidden"
           >
-            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ArrowRight className="w-6 h-6 text-primary-500" />
+            <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowRight className="w-6 h-6 text-[#BF953F]" />
             </div>
 
-            <div className="w-14 h-14 rounded-2xl bg-primary-500/10 flex items-center justify-center mb-6 group-hover:bg-primary-500 transition-colors duration-500">
-              <UserCircle2 className="w-7 h-7 text-primary-500 group-hover:text-black" />
+            <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mb-8 group-hover:bg-[#BF953F] transition-colors duration-500">
+              <UserCircle2 className="w-8 h-8 text-[#BF953F] group-hover:text-white" />
             </div>
 
-            <h3 className="text-2xl font-bold mb-2">
-              <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent group-hover:from-primary-400 group-hover:to-primary-600 transition-all">
-                Staff Member
-              </span>
+            <h3 className="text-2xl font-black mb-2 text-gray-900 group-hover:text-[#BF953F] transition-colors">
+              Staff Member
             </h3>
-            <p className="text-white/40 text-sm leading-relaxed text-left group-hover:text-white/60 transition-colors">
-              Fast-track sales processing, customer checkout, and daily shift management.
+            <p className="text-gray-400 text-sm font-medium leading-relaxed text-left group-hover:text-gray-500 transition-colors">
+              Operational efficiency, customer service, and transaction processing.
             </p>
 
-            <div className="mt-8 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary-500/50">
-              <span>Quick Access</span>
-              <div className="w-1 h-1 rounded-full bg-primary-500/30"></div>
+            <div className="mt-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-[#BF953F]/60">
+              <span>Rapid Entry</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-[#BF953F]/30"></div>
               <span>Terminal Mode</span>
             </div>
           </motion.button>
@@ -115,10 +111,10 @@ const RoleSelection: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="mt-16 text-center"
+          className="mt-20 text-center"
         >
-          <p className="text-white/20 text-xs tracking-widest uppercase">
-            &copy; 2024 SmartPOS+ Systems. All rights reserved.
+          <p className="text-gray-300 text-[10px] font-black tracking-[0.3em] uppercase">
+            &copy; 2024 SmartPOS+ Executive Systems
           </p>
         </motion.div>
       </div>
