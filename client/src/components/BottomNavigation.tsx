@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Home, Package, Scan, Users, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
