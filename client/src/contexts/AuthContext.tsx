@@ -182,6 +182,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    if (socket && user) {
+      socket.emit('leave-user', user.id);
+    }
+
     if (token) {
       fetch('/api/auth/logout', {
         method: 'POST',
