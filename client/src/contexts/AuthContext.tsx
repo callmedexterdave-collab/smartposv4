@@ -44,7 +44,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const data = await res.json();
         if (cancelled) return;
 
-        const newSocket = io(data.origin, {
+        // If data.origin says localhost but we're on a public URL, it's a proxy mismatch
+        let socketUrl = data.origin;
+        if (typeof window !== 'undefined' && socketUrl.includes('localhost') && !window.location.hostname.includes('localhost')) {
+          socketUrl = window.location.origin;
+        }
+
+        const newSocket = io(socketUrl, {
           transports: ['websocket', 'polling'],
           reconnection: true,
           reconnectionAttempts: 10,

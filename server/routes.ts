@@ -485,8 +485,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Provide server info (origin) so clients on LAN can discover the real server URL
   app.get('/api/server-info', (req: Request, res: Response) => {
     try {
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-      const host = req.get('host') || `localhost:5000`;
+      // Prioritize X-Forwarded headers for proxies
+      const xProto = req.headers['x-forwarded-proto'] as string;
+      const xHost = req.headers['x-forwarded-host'] as string;
+
+      const protocol = xProto || req.protocol || 'http';
+      const host = xHost || req.get('host') || `localhost:5000`;
+
+      // If we're behind a proxy (like fly.dev or Builder), the origin should match the external URL
       const origin = `${protocol}://${host}`;
       res.status(200).json({ origin });
     } catch (error) {
