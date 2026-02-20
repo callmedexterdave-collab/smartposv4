@@ -74,9 +74,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req: Request, res: Response) => {
     try {
       const { staffId, passkey, deviceInfo } = req.body;
-      
-      // Verify credentials
-      const staff = dbService.getStaffByStaffId(staffId) as any;
+
+      // Verify credentials locally first
+      let staff = dbService.getStaffByStaffId(staffId) as any;
+
+      // If not found locally, check Supabase (Cloud)
+      if (!staff) {
+        const supabase = getSupabase();
+        if (supabase) {
+          const { data, error } = await supabase.from('staff').select('*').eq('staff_id', staffId).single();
+          if (data && !error) {
+             // Save to local DB for future offline use
+             staff = {
+               id: data.id,
+               name: data.name,
+               staffId: data.staff_id,
+               passkey: data.passhash,
+               createdBy: data.created_by,
+               createdAt: data.created_at
+             };
+             dbService.saveStaff([staff]);
+          }
+        }
+      }
+
       if (!staff) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
@@ -485,8 +506,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Provide server info (origin) so clients on LAN can discover the real server URL
   app.get('/api/server-info', (req: Request, res: Response) => {
     try {
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-      const host = req.get('host') || `localhost:5000`;
+      // Prioritize X-Forwarded headers for proxies
+      const xProto = req.headers['x-forwarded-proto'] as string;
+      const xHost = req.headers['x-forwarded-host'] as string;
+
+      const protocol = xProto || req.protocol || 'http';
+      const host = xHost || req.get('host') || `localhost:5000`;
+
+      // If we're behind a proxy (like fly.dev or Builder), the origin should match the external URL
       const origin = `${protocol}://${host}`;
       res.status(200).json({ origin });
     } catch (error) {
@@ -771,48 +798,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Track connected users
-  const connectedUsers = new Map<string, { socketId: string, lastActive: Date, view?: string }>();
+  const connectedUsers = new Map<string, { socketIds: Set<string>, lastActive: Date, view?: string }>();
 
   io.on("connection", (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
     socket.on("join-user", (userId) => {
       socket.join(`user:${userId}`);
-      connectedUsers.set(userId, { socketId: socket.id, lastActive: new Date() });
-      
+
+      const user = connectedUsers.get(userId) || { socketIds: new Set<string>(), lastActive: new Date() };
+      user.socketIds.add(socket.id);
+      user.lastActive = new Date();
+      connectedUsers.set(userId, user);
+
       // Broadcast online status
       io.emit("user-status", { userId, status: "online", lastActive: new Date().toISOString() });
-      
+
       // Also emit staffStatusUpdate for staff management
       io.emit("staffStatusUpdate", { staffId: userId, isOnline: true, lastActive: new Date() });
     });
 
     socket.on("leave-user", (userId) => {
       socket.leave(`user:${userId}`);
-      connectedUsers.delete(userId);
-      io.emit("user-status", { userId, status: "offline", lastActive: new Date().toISOString() });
-      io.emit("staffStatusUpdate", { staffId: userId, isOnline: false, lastActive: new Date() });
+      const user = connectedUsers.get(userId);
+      if (user) {
+        user.socketIds.delete(socket.id);
+        if (user.socketIds.size === 0) {
+          connectedUsers.delete(userId);
+          io.emit("user-status", { userId, status: "offline", lastActive: new Date().toISOString() });
+          io.emit("staffStatusUpdate", { staffId: userId, isOnline: false, lastActive: new Date() });
+        }
+      }
     });
 
     // Staff Management events
     socket.on("adminOnline", ({ adminId }) => {
-      connectedUsers.set(adminId, { socketId: socket.id, lastActive: new Date() });
+      const user = connectedUsers.get(adminId) || { socketIds: new Set<string>(), lastActive: new Date() };
+      user.socketIds.add(socket.id);
+      user.lastActive = new Date();
+      connectedUsers.set(adminId, user);
       io.emit("staffStatusUpdate", { staffId: adminId, isOnline: true, lastActive: new Date() });
     });
 
     socket.on("adminOffline", ({ adminId }) => {
-      connectedUsers.delete(adminId);
-      io.emit("staffStatusUpdate", { staffId: adminId, isOnline: false, lastActive: new Date() });
+      const user = connectedUsers.get(adminId);
+      if (user) {
+        user.socketIds.delete(socket.id);
+        if (user.socketIds.size === 0) {
+          connectedUsers.delete(adminId);
+          io.emit("staffStatusUpdate", { staffId: adminId, isOnline: false, lastActive: new Date() });
+        }
+      }
     });
 
     socket.on("heartbeat", ({ adminId }) => {
-      if (connectedUsers.has(adminId)) {
-        const user = connectedUsers.get(adminId)!;
+      const user = connectedUsers.get(adminId);
+      if (user) {
         user.lastActive = new Date();
-        connectedUsers.set(adminId, user);
-        
-        // Optionally update DB session
-        // dbService.updateSessionActivity(token?); // We don't have token here easily without passing it
       }
     });
 
@@ -826,22 +868,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     socket.on("setStaffView", ({ view }) => {
-      // Find user by socket id? Or just ignore for now as it's just for tracking
+      // Could find user by searching socket ID in all sets
     });
 
     // Inventory events
     socket.on("product-viewed", ({ barcode }) => {
-      // Could log this or update "view count"
       console.log(`Product viewed: ${barcode}`);
     });
 
     socket.on("disconnect", () => {
       // Find user by socket ID and remove
       for (const [userId, user] of connectedUsers.entries()) {
-        if (user.socketId === socket.id) {
-          connectedUsers.delete(userId);
-          io.emit("user-status", { userId, status: "offline", lastActive: new Date().toISOString() });
-          io.emit("staffStatusUpdate", { staffId: userId, isOnline: false, lastActive: new Date() });
+        if (user.socketIds.has(socket.id)) {
+          user.socketIds.delete(socket.id);
+          if (user.socketIds.size === 0) {
+            connectedUsers.delete(userId);
+            io.emit("user-status", { userId, status: "offline", lastActive: new Date().toISOString() });
+            io.emit("staffStatusUpdate", { staffId: userId, isOnline: false, lastActive: new Date() });
+          }
           break;
         }
       }
@@ -876,12 +920,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Staff update
-  app.post('/api/staff', (req: Request, res: Response) => {
+  app.post('/api/staff', async (req: Request, res: Response) => {
     try {
       const staff = req.body;
       if (Array.isArray(staff)) {
         dbService.saveStaff(staff);
-        // Notify about staff updates?
+
+        // Sync to Supabase if configured
+        const supabase = getSupabase();
+        if (supabase) {
+          const rows = staff.map(m => ({
+            id: m.id,
+            name: m.name,
+            staff_id: m.staffId,
+            passhash: m.passkey, // Already hashed in createStaff (client side)
+            created_by: m.createdBy ?? null,
+            created_at: m.createdAt ?? new Date().toISOString()
+          }));
+          const { error } = await supabase.from('staff').upsert(rows, { onConflict: 'id' });
+          if (error) console.error('Failed to sync staff to cloud:', error);
+        }
+
         res.status(200).json({ message: 'Staff updated successfully' });
       } else {
         res.status(400).json({ error: 'Invalid staff data' });

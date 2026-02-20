@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children, showNavigation = true, fullWi
 
   return (
     <div className={cn(
-      "min-h-screen bg-gray-50 dark:bg-gray-900 mx-auto relative",
+      "min-h-screen bg-white mx-auto relative",
       fullWidth ? "w-full" : "w-full sm:w-[95%] md:max-w-2xl lg:max-w-4xl xl:max-w-6xl",
       "transition-all duration-300"
     )}>

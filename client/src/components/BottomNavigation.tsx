@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Home, Package, Scan, Users, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,34 +30,31 @@ const BottomNavigation: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 bg-[#F5F5F5] shadow-md">
-      <div className="w-full max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 bg-transparent pointer-events-none">
+      <div className="w-full max-w-lg mx-auto pointer-events-auto">
         {/* Soft UI Navigation Container */}
         <div
-          className="relative bg-[#F5F5F5]/80 rounded-full shadow-lg border border-gray-300/40"
-          style={{ backdropFilter: 'blur(4px)' }}
+          className="relative bg-white/90 rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-gray-100/50 overflow-visible"
+          style={{ backdropFilter: 'blur(10px)' }}
         >
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-white/0 rounded-full" />
-          
-          <div className="relative flex justify-around items-center py-3 px-2">
+          <div className="relative flex justify-around items-center py-4 px-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location === item.path;
-              
+
               if (item.isScanner) {
                 return (
                   <button
                     key={item.id}
                     onClick={() => setLocation(item.path)}
                     data-testid={`nav-${item.id}`}
-                    className="relative -top-5 z-10"
+                    className="relative -top-8 z-10"
                   >
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-[#7D6C7D] to-[#D89D9D] rounded-full flex items-center justify-center shadow-xl touch-feedback hover:scale-105 transition-all duration-300 transform"
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#BF953F] via-[#FCF6BA] to-[#B38728] rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(191,149,63,0.4)] touch-feedback hover:scale-110 active:scale-95 transition-all duration-300 transform border-4 border-white"
                          style={{
-                           boxShadow: '0 10px 28px rgba(125, 108, 125, 0.45), inset 0 2px 4px rgba(255,255,255,0.3)',
+                           boxShadow: '0 10px 25px rgba(191, 149, 63, 0.4), inset 0 2px 4px rgba(255,255,255,0.5)',
                          }}>
-                      <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-sm" />
+                      <Icon className="w-8 h-8 text-[#5C4D2E] drop-shadow-sm" />
                     </div>
                   </button>
                 );
@@ -68,32 +66,34 @@ const BottomNavigation: React.FC = () => {
                   onClick={() => setLocation(item.path)}
                   data-testid={`nav-${item.id}`}
                   className={cn(
-                    "relative flex flex-col items-center py-2 px-3 min-w-[60px] touch-feedback transition-all duration-300 rounded-2xl",
-                    isActive 
-                      ? "text-[#7D6C7D] bg-white/60 shadow-inner" 
+                    "relative flex flex-col items-center py-2 px-4 transition-all duration-300 rounded-2xl group",
+                    isActive
+                      ? "text-[#BF953F]"
                       : "text-gray-400 hover:text-gray-600"
                   )}
                 >
                   <div className="relative flex flex-col items-center">
                     <Icon
                       className={cn(
-                        "w-5 h-5 sm:w-6 sm:h-6 mb-1 transition-all duration-300",
+                        "w-6 h-6 mb-1 transition-all duration-300",
                         isActive
-                          ? "text-[#7D6C7D] drop-shadow-sm transform scale-110"
-                          : "text-gray-400"
+                          ? "text-[#BF953F] drop-shadow-sm scale-110"
+                          : "group-hover:scale-110"
                       )}
                     />
                     <span
                       className={cn(
-                        "text-[10px] sm:text-xs font-medium transition-all duration-300",
-                        isActive ? "text-[#7D6C7D] font-semibold" : "text-gray-400 font-normal"
+                        "text-[10px] font-black uppercase tracking-tighter transition-all duration-300",
+                        isActive ? "text-[#BF953F]" : "text-gray-400"
                       )}
                     >
                       {item.label}
                     </span>
-                    {/* Active indicator line positioned beneath text */}
                     {isActive && (
-                      <div className="mt-0.5 w-6 h-0.5 bg-[#7D6C7D] rounded-full shadow-sm z-20" />
+                      <motion.div
+                        layoutId="nav-active"
+                        className="absolute -bottom-2 w-1.5 h-1.5 rounded-full bg-[#BF953F]"
+                      />
                     )}
                   </div>
                 </button>

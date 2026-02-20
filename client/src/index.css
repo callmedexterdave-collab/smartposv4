@@ -128,8 +128,16 @@
   }
 }
 
-/* Custom SmartPOS+ Styles */
+  /* Custom SmartPOS+ Styles */
 @layer components {
+  .gold-gradient-text {
+    @apply bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728] bg-clip-text text-transparent;
+  }
+
+  .modern-card {
+    @apply bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300;
+  }
+
   .touch-feedback:active {
     transform: scale(0.95);
     transition: transform 0.1s ease-in-out;

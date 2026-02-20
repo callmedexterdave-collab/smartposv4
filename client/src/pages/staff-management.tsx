@@ -129,7 +129,13 @@ const StaffManagement: React.FC = () => {
         if (!res.ok) throw new Error('No server info');
         const data = await res.json();
         REALTIME_SERVICE_URL = data.origin;
-        setServerInfoState(String(data.origin));
+
+        // If data.origin says localhost but we're on a public URL, it's a proxy mismatch
+        if (typeof window !== 'undefined' && REALTIME_SERVICE_URL.includes('localhost') && !window.location.hostname.includes('localhost')) {
+          REALTIME_SERVICE_URL = window.location.origin;
+        }
+
+        setServerInfoState(String(REALTIME_SERVICE_URL));
 
         socketInstance = io(REALTIME_SERVICE_URL, {
           auth: {
