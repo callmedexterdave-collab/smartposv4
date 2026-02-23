@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { CartItem } from '@shared/schema';
 import { databaseSyncService } from '@/lib/sync';
+import { getUnitMultiplier } from '@/lib/utils';
 
 interface AppContextType {
   cart: CartItem[];
@@ -77,7 +78,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       const existingItem = prevCart.find(cartItem => cartItem.productId === item.productId && cartItem.unit === item.unit);
       if (existingItem && existingItem.unit === item.unit) {
         const newQuantity = existingItem.quantity + item.quantity;
-        const newSubtotal = Math.round(newQuantity * existingItem.price * 100) / 100;
+        const newSubtotal = Math.round(newQuantity * getUnitMultiplier(existingItem.unit) * existingItem.price * 100) / 100;
         return prevCart.map(cartItem =>
           cartItem.productId === item.productId && cartItem.unit === item.unit
             ? { ...cartItem, quantity: newQuantity, subtotal: newSubtotal }
@@ -106,7 +107,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setCart(prevCart =>
       prevCart.map(item =>
         item.productId === productId
-          ? { ...item, quantity: roundedQuantity, subtotal: Math.round(roundedQuantity * item.price * 100) / 100 }
+          ? { ...item, quantity: roundedQuantity, subtotal: Math.round(roundedQuantity * getUnitMultiplier(item.unit) * item.price * 100) / 100 }
           : item
       )
     );
