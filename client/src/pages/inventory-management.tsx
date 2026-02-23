@@ -366,26 +366,36 @@ const InventoryManagement: React.FC = () => {
   // Handle stock addition
   const handleAddStock = async (data: StockAdditionFormData) => {
     if (!editingProduct) return;
-    
+
     setIsAddingStock(true);
     try {
-      const updatedQuantity = editingProduct.quantity + data.addQuantity;
+      // Account for units in stock addition
+      let quantityToAdd = data.addQuantity;
+      const currentUnit = form.getValues('unit');
+
+      if (currentUnit === 'dozen') {
+        quantityToAdd *= 12;
+      } else if (currentUnit === 'box') {
+        quantityToAdd *= pcsPerBox;
+      }
+
+      const updatedQuantity = editingProduct.quantity + quantityToAdd;
       await ProductService.updateProduct(editingProduct.id, {
         ...editingProduct,
         quantity: updatedQuantity
       });
-      
+
       // Update the editing product with new quantity
       setEditingProduct({
         ...editingProduct,
         quantity: updatedQuantity
       });
-      
+
       toast({
         title: 'Stock Updated',
-        description: `Added ${data.addQuantity} units to ${editingProduct.name}`,
+        description: `Added ${quantityToAdd} pieces to ${editingProduct.name}`,
       });
-      
+
       stockForm.reset();
       await loadProducts();
       // Sync after stock changes

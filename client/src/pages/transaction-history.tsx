@@ -34,10 +34,9 @@ const TransactionHistory: React.FC = () => {
       try {
         // Fetch all sales
         const sales = await db.sales.toArray();
-        const filteredSales = sales.filter(s => (s.paymentType as any) !== 'credits');
-        
+
         // Convert sales to Transaction format
-        const formattedTransactions = await Promise.all(filteredSales.map(async (sale) => {
+        const formattedTransactions = await Promise.all(sales.map(async (sale) => {
           // Count items for this sale
           const itemsCount = await db.saleItems.where('saleId').equals(sale.id).count();
 
@@ -73,26 +72,20 @@ const TransactionHistory: React.FC = () => {
   // Filter transactions by month and year
   const getFilteredTransactions = (paymentMethod?: 'cash' | 'ewallet' | 'credits') => {
     return transactions.filter(transaction => {
-      // Ensure transaction.date is valid
-      if (!transaction.date) return false;
-      
-      const transactionDate = new Date(transaction.date);
-      
-      // Skip invalid dates
-      if (isNaN(transactionDate.getTime())) return false;
-      
-      const matchesMonthYear = 
-        transactionDate.getMonth() === selectedMonth && 
+      const transactionDate = transaction.createdAt;
+
+      const matchesMonthYear =
+        transactionDate.getMonth() === selectedMonth &&
         transactionDate.getFullYear() === selectedYear;
-      
-      const matchesPaymentMethod = 
+
+      const matchesPaymentMethod =
         !paymentMethod || transaction.paymentMethod === paymentMethod;
-      
-      const matchesSearch = 
-        !searchQuery || 
+
+      const matchesSearch =
+        !searchQuery ||
         transaction.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transaction.amount?.toString().includes(searchQuery);
-      
+
       return matchesMonthYear && matchesPaymentMethod && matchesSearch;
     });
   };

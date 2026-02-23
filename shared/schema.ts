@@ -64,6 +64,7 @@ export const saleItems = sqliteTable("sale_items", {
   productId: text("product_id").notNull(),
   quantity: integer("quantity").notNull(),
   price: real("price").notNull(),
+  unit: text("unit").default("pieces"),
   productName: text("product_name"),
   isNonInventory: integer("is_non_inventory", { mode: 'boolean' }).default(false),
 });

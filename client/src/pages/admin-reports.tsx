@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { useLocation } from 'wouter';
 import { Calendar, ChevronDown, BarChart3, LineChart } from 'lucide-react';
 import { db } from '@/lib/db';
+import { getUnitMultiplier } from '@/lib/utils';
 
 export default function AdminReports() {
   const [, setLocation] = useLocation();
@@ -81,7 +82,8 @@ export default function AdminReports() {
     const totalQtyCost = items.reduce((sum, it) => {
       const pname = productNameById[it.productId] || '';
       const cost = avgCostByName[pname] || 0;
-      return sum + cost * (it.quantity || 0);
+      const multiplier = getUnitMultiplier((it as any).unit || 'pieces');
+      return sum + cost * (it.quantity || 0) * multiplier;
     }, 0);
 
     const totalExpenses = expensesRows.reduce((sum, ex) => sum + (ex.amount || 0), 0);
@@ -108,12 +110,16 @@ export default function AdminReports() {
     for (const it of items) {
       const name = productNameById[it.productId] || '';
       const unitPrice = it.price || 0;
+      const multiplier = getUnitMultiplier((it as any).unit || 'pieces');
+      const actualQty = (it.quantity || 0) * multiplier;
+
       const fullPrice = products.find(p => p.id === it.productId)?.price || unitPrice;
-      const discount = Math.max(0, fullPrice - unitPrice) * (it.quantity || 0);
-      const cost = (avgCostByName[name] || 0) * (it.quantity || 0);
-      const lineMargin = (unitPrice - (avgCostByName[name] || 0)) * (it.quantity || 0);
+      const discount = Math.max(0, fullPrice - unitPrice) * actualQty;
+      const cost = (avgCostByName[name] || 0) * actualQty;
+      const lineMargin = (unitPrice - (avgCostByName[name] || 0)) * actualQty;
+
       if (!perProduct[name]) perProduct[name] = { name, qty: 0, unitPriceSum: 0, unitPriceCount: 0, discount: 0, costSum: 0, margin: 0 };
-      perProduct[name].qty += it.quantity || 0;
+      perProduct[name].qty += actualQty;
       perProduct[name].unitPriceSum += unitPrice;
       perProduct[name].unitPriceCount += 1;
       perProduct[name].discount += discount;

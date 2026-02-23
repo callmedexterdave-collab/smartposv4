@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import type {
     User, Product, Sale, Staff, CartItem, SaleItem, Expense, Purchase, Creditor, Variant
 } from '@shared/schema';
+import { getUnitMultiplier } from './utils';
 
 // Helper function for generating UUIDs in browser environment
 function generateUUID() {
@@ -612,24 +613,27 @@ export class SalesService {
     for (const item of saleData.items) {
       if ((item as any).isNonInventory) continue;
 
-      const product = await ProductService.getProductByBarcode(item.productId) || 
+      const product = await ProductService.getProductByBarcode(item.productId) ||
                      await db.products.get(item.productId);
-      
+
+      const multiplier = getUnitMultiplier(item.unit);
+      const actualQuantity = item.quantity * multiplier;
+
       if (!product) {
         // Check if it is a variant
         const variant = await db.variants.get(item.productId);
         if (variant) {
           const variantQty = (variant as any).quantity ?? 0;
-          if (variantQty < item.quantity) {
-            throw new Error(`Insufficient stock for variant ${item.name}. Available: ${variantQty}, Required: ${item.quantity}`);
+          if (variantQty < actualQuantity) {
+            throw new Error(`Insufficient stock for variant ${item.name}. Available: ${variantQty}, Required: ${actualQuantity}`);
           }
           continue;
         }
         throw new Error(`Product ${item.name} no longer exists`);
       }
 
-      if (product.quantity < item.quantity) {
-        throw new Error(`Insufficient stock for ${item.name}. Available: ${product.quantity}, Required: ${item.quantity}`);
+      if (product.quantity < actualQuantity) {
+        throw new Error(`Insufficient stock for ${item.name}. Available: ${product.quantity}, Required: ${actualQuantity}`);
       }
     }
 
@@ -652,6 +656,7 @@ export class SalesService {
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
+            unit: item.unit,
             productName: item.name,
             isNonInventory: !!item.isNonInventory
         };
@@ -662,14 +667,16 @@ export class SalesService {
     try {
       for (const item of saleData.items) {
         if (item.isNonInventory) continue;
+        const multiplier = getUnitMultiplier(item.unit);
+        const actualQuantity = item.quantity * multiplier;
         try {
-          await ProductService.updateStock(item.productId, -item.quantity);
+          await ProductService.updateStock(item.productId, -actualQuantity);
         } catch (e) {
           // If product update fails, try updating variant stock
           const variant = await db.variants.get(item.productId);
           if (variant) {
             const currentQty = (variant as any).quantity ?? 0;
-            const newQty = currentQty - item.quantity;
+            const newQty = currentQty - actualQuantity;
             if (newQty < 0) throw new Error(`Insufficient stock for variant ${variant.name}`);
             await ProductService.updateVariant(variant.id, { quantity: newQty });
           } else {
@@ -690,13 +697,12 @@ export class SalesService {
   static async getTodaysSales(): Promise<Sale[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const rows = await db.sales.where('createdAt').above(today).toArray();
-    return rows.filter(s => (s.paymentType as any) !== 'credits');
+    return await db.sales.where('createdAt').above(today).toArray();
   }
 
   static async getTotalSales(): Promise<number> {
     const sales = await db.sales.toArray();
-    return sales.filter(s => (s.paymentType as any) !== 'credits').reduce((total, sale) => total + (sale.total || 0), 0);
+    return sales.reduce((total, sale) => total + (sale.total || 0), 0);
   }
 
   static async addIncome(total: number, paymentType: 'cash' | 'ewallet', staffId?: string): Promise<Sale> {
